@@ -1,0 +1,40 @@
+rules_version = '2';
+// Crafting Dreams: who can read and change what.
+// Paste this into Firebase console > Firestore Database > Rules, then Publish.
+// The admin is whoever signs in with the Google account listed in isAdmin().
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['srisainath.job@gmail.com'];
+    }
+
+    // The website reads this only to find out whether you are the admin.
+    match /admin/{doc} { allow read: if isAdmin(); allow write: if false; }
+
+    // Price, discount and show/hide edits: everyone reads, only the admin edits.
+    match /products/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Site settings such as the announcement bar.
+    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Coupons: a shopper can check one code they type, but can't list them all.
+    match /coupons/{code} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
+    // Orders: a signed-in shopper creates their own after paying and reads only
+    // their own. Only the admin can see every order and change its status.
+    match /orders/{id} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'Paid';
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+  }
+}
