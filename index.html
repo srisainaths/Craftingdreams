@@ -6,6 +6,17 @@
 <title>Crafting Dreams — Design your memories</title>
 <meta name="description" content="Handmade resin keepsakes: varamala preservation, baby casting, resin frames, engagement platters, rakhi plates, diyas, wall hangings and bed lamps. Made to order.">
 <meta name="theme-color" content="#2E1065">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://craftingdreams.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crafting Dreams">
+<meta property="og:title" content="Crafting Dreams: handmade resin keepsakes">
+<meta property="og:description" content="Varamala preservation, baby casting, resin frames and engagement platters. Handmade to order, customised with you on WhatsApp.">
+<meta property="og:url" content="https://craftingdreams.vercel.app/">
+<meta property="og:image" content="https://craftingdreams.vercel.app/images/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -42,7 +53,7 @@ header.top{position:sticky;top:0;z-index:40;background:var(--lilac);border-botto
 .nav{display:flex;align-items:center;gap:22px;height:76px}
 .logo{display:flex;flex-direction:column;text-decoration:none;line-height:1;flex:none}
 .logo svg{height:40px;width:auto}
-.logo span{font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;font-weight:600;margin-top:4px;padding-left:4px}
+.logo span{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;font-weight:600;margin-top:4px;padding-left:4px}
 .menu{display:flex;gap:26px;margin-left:auto;font-size:14.5px;font-weight:500}
 .menu a{text-decoration:none;padding:6px 0;border-bottom:2px solid transparent}
 .menu a:hover{border-color:var(--ink)}
@@ -76,7 +87,7 @@ header.top{position:sticky;top:0;z-index:40;background:var(--lilac);border-botto
 .btn.white{background:#fff;color:var(--ink)}
 .hctl{position:absolute;left:0;right:0;bottom:22px;display:flex;justify-content:center;align-items:center;gap:14px}
 .dots{display:flex;gap:4px}
-.dots button{width:28px;height:28px;display:grid;place-items:center}
+.dots button{width:36px;height:44px;display:grid;place-items:center}
 .dots button::after{content:"";width:9px;height:9px;border-radius:99px;background:rgba(46,16,101,.25);transition:.3s}
 .dots button.on::after{width:26px;background:var(--ink)}
 .arr{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.6);display:grid;place-items:center;font-size:18px}
@@ -136,9 +147,9 @@ input:focus,textarea:focus{outline:0;border-color:var(--ink-2);box-shadow:0 0 0 
 .card .pic{aspect-ratio:1;position:relative;overflow:hidden;background:var(--lilac-3);cursor:pointer}
 .card .pic img,.card .pic svg{width:100%;height:100%;object-fit:cover;transition:.5s}
 .card:hover .pic img,.card:hover .pic svg{transform:scale(1.05)}
-.badge{position:absolute;top:12px;left:12px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:99px}
+.badge{position:absolute;top:12px;left:12px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px}
 .card .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
-.card .ct{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.card .ct{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .card h3{font-size:16px;font-weight:600;cursor:pointer}
 .card .tl{font-size:13px;color:var(--muted);flex:1}
 .card .pr{font-weight:700;font-size:17px;margin:6px 0 10px}
@@ -270,7 +281,7 @@ label{font-size:12.5px;font-weight:600;display:block;margin-bottom:4px}
 .done p{color:var(--muted);margin-bottom:18px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,140px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:99px;z-index:90;transition:transform .3s,visibility .3s;visibility:hidden;font-size:14px}
 .toast.on{transform:translate(-50%,0);visibility:visible}
-.wa-fab{position:fixed;right:18px;bottom:18px;z-index:25;background:#1D8A3B;color:#fff;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;box-shadow:0 10px 28px rgba(0,0,0,.3)}
+.wa-fab{position:fixed;right:18px;bottom:18px;z-index:25;transition:transform .35s var(--out,ease),opacity .35s;background:#1D8A3B;color:#fff;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;box-shadow:0 10px 28px rgba(0,0,0,.3)}
 
 @media(max-width:960px){
  .menu{display:none}.burger{display:grid}
@@ -288,7 +299,12 @@ label{font-size:12.5px;font-weight:600;display:block;margin-bottom:4px}
  .search{width:100%}
 }
 @media(max-width:560px){
- .logo svg{height:32px}
+ .logo svg{height:28px}
+ .logo span{font-size:9px;letter-spacing:.2em;padding-left:2px}
+ .nav{gap:6px}.icons{gap:0}.ib{width:42px;height:42px}
+ .tabs button{padding:12px 6px;font-size:13.5px;flex:1}
+ .story .im{max-width:240px}
+ .wa-fab{width:52px;height:52px;right:14px;bottom:14px}
  .grid{grid-template-columns:1fr 1fr;gap:12px}
  .card .tl{display:none}.card .body{padding:12px}.card h3{font-size:14.5px}
  .steps,footer .cols{grid-template-columns:1fr}
@@ -396,6 +412,9 @@ s.was{color:var(--muted);font-weight:500;font-size:.82em;margin-left:4px}
 .cform h4{font-size:17px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
 @media(max-width:560px){.kpis{grid-template-columns:1fr 1fr}.kpis div:last-child{grid-column:1/-1}.kpis b{font-size:20px}}
+.wa-fab.tuck{transform:translateY(110px);opacity:0;pointer-events:none}
+#drawer.on~.toast,#odrawer.on~.toast{bottom:auto;top:84px;transform:translate(-50%,-160px)}
+#drawer.on~.toast.on,#odrawer.on~.toast.on{transform:translate(-50%,0)}
 .acct-note{font-size:14px;color:var(--muted);background:var(--lilac-3);border-radius:var(--r);padding:16px}
 
 /* ================= motion ================= */
@@ -528,6 +547,7 @@ header.top.sc{box-shadow:0 8px 26px rgba(46,16,101,.16)}
   <div class="active" id="active"></div>
   <div class="count" id="count" aria-live="polite"></div>
   <div class="grid" id="grid"></div>
+  <div class="vwmore" id="more" hidden><button class="btn line" id="moreBtn" type="button">Show all products</button></div>
  </div>
 </section>
 
@@ -561,7 +581,7 @@ header.top.sc{box-shadow:0 8px 26px rgba(46,16,101,.16)}
 
 <section id="budget">
  <div class="wrap">
-  <div class="sh"><div><h2>Budget bestsellers</h2><p>Lovely gifts under ₹1,000</p></div><a href="#shop" data-budget="0-1000">See all under ₹1,000</a></div>
+  <div class="sh"><div><h2>Gifts under ₹1,000</h2><p>Handmade keepsakes that are easy on the pocket</p></div><a href="#shop" data-budget="0-1000">See all under ₹1,000</a></div>
   <div class="row" id="budgetRow"></div>
  </div>
 </section>
@@ -911,6 +931,11 @@ function art(cat, label, ratio){
 }
 const pic = (img, cat, label, ratio) => img ? `<img src="${esc(img)}" alt="${esc(label)}" loading="lazy">` : art(cat, label, ratio);
 
+/* ---------- hide items that don't have a photo yet ---------- */
+/* Anything with image:"" stays off the site. Add a photo path and it shows up again. */
+[PRODUCTS,CATEGORIES,HERO_SLIDES].forEach(a=>{ for(let i=a.length-1;i>=0;i--) if(!a[i].image) a.splice(i,1); });
+CATEGORIES.splice(0,CATEGORIES.length,...CATEGORIES.filter(c=>PRODUCTS.some(p=>p.cat===c.name)));
+
 /* ---------- hero slider ---------- */
 let si = 0, timer = null;
 function buildHero(){
@@ -935,7 +960,8 @@ function restart(){ clearInterval(timer); if(!matchMedia("(prefers-reduced-motio
 
 /* ---------- filters ---------- */
 const F = {cat:"All", q:"", occ:"", rec:"", bud:null};
-function catPick(c){ F.cat=c; F.occ=""; F.rec=""; F.bud=null; render(); }
+let showAll=false;
+function catPick(c){ F.cat=c; F.occ=""; F.rec=""; F.bud=null; showAll=false; render(); }
 function goShop(){ document.getElementById("shop").scrollIntoView(); }
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-goto]"); if(g){ e.preventDefault(); catPick(g.dataset.goto); goShop(); }
@@ -956,8 +982,10 @@ function buildFinder(){
   const draw=()=>{
     tabs.forEach(t=>{t.setAttribute("aria-selected", t.dataset.tab===tab); t.tabIndex = t.dataset.tab===tab?0:-1;});
     $("#p-gift").setAttribute("aria-labelledby","t-"+tab);
-    const list = tab==="occ"?OCCASIONS:tab==="rec"?RECIPIENTS:BUDGETS.map(b=>b.label);
-    $("#p-gift").innerHTML = list.map((x,i)=>`<button data-i="${i}" class="pop" style="--d:${i*.04}s">${esc(x)}</button>`).join("");
+    const all = tab==="occ"?OCCASIONS:tab==="rec"?RECIPIENTS:BUDGETS.map(b=>b.label);
+    const has = i => PRODUCTS.some(p=>!p.hidden&&(tab==="occ"?(p.occ||[]).includes(OCCASIONS[i]):tab==="rec"?(p.rec||[]).includes(RECIPIENTS[i]):(now(p)>=BUDGETS[i].min&&now(p)<BUDGETS[i].max)));
+    const list = all.map((x,i)=>has(i)?x:null);
+    $("#p-gift").innerHTML = list.map((x,i)=>x===null?"":`<button data-i="${i}" class="pop" style="--d:${i*.04}s">${esc(x)}</button>`).join("");
     moveInd();
   };
   const moveInd=()=>{ const sel=tabs.find(x=>x.dataset.tab===tab), ind=document.querySelector(".tabs .ind");
@@ -983,17 +1011,20 @@ function render(){
   const q=F.q.trim().toLowerCase();
   const list=PRODUCTS.filter(p=>!p.hidden&&(F.cat==="All"||p.cat===F.cat)&&(!F.occ||(p.occ||[]).includes(F.occ))&&(!F.rec||(p.rec||[]).includes(F.rec))
     &&(!F.bud||(now(p)>=F.bud.min&&now(p)<F.bud.max))&&(!q||(p.name+" "+p.cat+" "+(p.tagline||"")+" "+p.desc).toLowerCase().includes(q)));
-  $("#grid").innerHTML = list.length?list.map(card).join(""):`<div class="nores"><b>No products match.</b><br>Try another category or clear the filters.</div>`;
+  const plain=F.cat==="All"&&!q&&!F.occ&&!F.rec&&!F.bud, cut=plain&&!showAll&&list.length>12;
+  const shown=cut?list.slice(0,12):list;
+  $("#more").hidden=!cut; $("#moreBtn").textContent=`Show all ${list.length} products`;
+  $("#grid").innerHTML = shown.length?shown.map(card).join(""):`<div class="nores"><b>No products match.</b><br>Try another category or clear the filters.</div>`;
   const cs=[...document.querySelectorAll("#grid .card")];
   if(firstRender){ reveal(cs); firstRender=false; } else cs.forEach((c,i)=>{ c.classList.add("pop"); c.style.setProperty("--d",Math.min(i,8)*.05+"s"); });
-  $("#count").textContent = list.length+" product"+(list.length===1?"":"s");
+  $("#count").textContent = cut?`Showing 12 of ${list.length} products`:list.length+" product"+(list.length===1?"":"s");
   document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed", c.dataset.cat===F.cat && !F.occ && !F.rec && !F.bud));
   const lab=F.occ||F.rec||(F.bud&&F.bud.label);
   $("#active").classList.toggle("on",!!lab);
   $("#active").innerHTML = lab?`Showing gifts for <b>${esc(lab)}</b><button id="clr">Clear filter</button>`:"";
   if(lab) $("#clr").onclick=()=>{F.occ="";F.rec="";F.bud=null;render();};
 }
-function buildBudget(){ $("#budgetRow").innerHTML = PRODUCTS.filter(p=>!p.hidden&&now(p)<1000).sort((a,b)=>now(a)-now(b)).map(card).join(""); }
+function buildBudget(){ const l=PRODUCTS.filter(p=>!p.hidden&&now(p)<1000).sort((a,b)=>now(a)-now(b)); $("#budget").hidden=l.length<3; $("#budgetRow").innerHTML=l.map(card).join(""); }
 function buildReviews(){ if(!REVIEWS.length) return; $("#reviews").hidden=false;
   $("#revs").innerHTML=REVIEWS.map(r=>`<div class="rev"><div class="st" aria-label="${r.stars||5} out of 5 stars">${"★".repeat(r.stars||5)}</div><p>${esc(r.text)}</p><b>${esc(r.name)}</b></div>`).join(""); }
 
@@ -1359,6 +1390,9 @@ function admSiteView(){
 initFirebase();
 
 /* ---------- misc ---------- */
+$("#moreBtn").onclick=()=>{ showAll=true; const n=document.querySelectorAll("#grid .card").length; render(); const c=document.querySelectorAll("#grid .card")[n]; if(c) c.querySelector(".pic").focus({preventScroll:true}); };
+/* WhatsApp button: tuck away while scrolling down on phones, come back on scroll up */
+(()=>{ let y=scrollY; addEventListener("scroll",()=>{ const d=scrollY-y; if(Math.abs(d)<8) return; $("#fab").classList.toggle("tuck",d>0&&scrollY>300&&innerWidth<700); y=scrollY; },{passive:true}); })();
 let tt; function toast(m){ $("#toast").textContent=m; $("#toast").classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>$("#toast").classList.remove("on"),2200); }
 $("#q").oninput=e=>{F.q=e.target.value;render();};
 $("#searchBtn").onclick=()=>{goShop(); setTimeout(()=>$("#q").focus({preventScroll:true}),350);};
