@@ -412,6 +412,7 @@ s.was{color:var(--muted);font-weight:500;font-size:.82em;margin-left:4px}
 .cform h4{font-size:17px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
 @media(max-width:560px){.kpis{grid-template-columns:1fr 1fr}.kpis div:last-child{grid-column:1/-1}.kpis b{font-size:20px}}
+.toast{max-width:min(92vw,520px);width:max-content;text-align:center;line-height:1.4;border-radius:18px}
 .wa-fab.tuck{transform:translateY(110px);opacity:0;pointer-events:none}
 #drawer.on~.toast,#odrawer.on~.toast{bottom:auto;top:84px;transform:translate(-50%,-160px)}
 #drawer.on~.toast.on,#odrawer.on~.toast.on{transform:translate(-50%,0)}
@@ -1222,7 +1223,16 @@ async function loadCatalog(){
 async function signIn(){
   if(!S.fb){ toast("Sign-in isn't set up yet"); return; }
   try{ await S.A.signInWithPopup(S.auth,new S.A.GoogleAuthProvider()); toast("Signed in"); }
-  catch(e){ const c=e&&e.code||""; if(!/popup-closed|cancelled-popup/.test(c)) toast("Sign-in didn't work. Please try again."); }
+  catch(e){ const c=e&&e.code||""; console.warn("Sign-in error",c,e);
+    if(/popup-closed|cancelled-popup/.test(c)) return;
+    const why={"auth/unauthorized-domain":"This website isn't allowed in Firebase yet (Authorised domains).",
+      "auth/operation-not-allowed":"Google sign-in isn't switched on in Firebase yet.",
+      "auth/configuration-not-found":"Google sign-in isn't switched on in Firebase yet.",
+      "auth/popup-blocked":"Your browser blocked the sign-in window. Allow pop-ups and try again.",
+      "auth/network-request-failed":"No connection. Check your internet and try again.",
+      "auth/web-storage-unsupported":"This browser blocks sign-in. Open the site in Chrome or Safari.",
+      "auth/internal-error":"Sign-in failed. If you opened this link inside WhatsApp or Instagram, open it in Chrome or Safari instead."}[c];
+    toast((why||"Sign-in didn't work. Please try again.")+(c?" ("+c.replace("auth/","")+")":"")); }
 }
 function drawAcctBtn(){
   const b=$("#acctBtn"), u=S.user;
@@ -1396,7 +1406,7 @@ initFirebase();
 $("#moreBtn").onclick=()=>{ showAll=true; const n=document.querySelectorAll("#grid .card").length; render(); const c=document.querySelectorAll("#grid .card")[n]; if(c) c.querySelector(".pic").focus({preventScroll:true}); };
 /* WhatsApp button: tuck away while scrolling down on phones, come back on scroll up */
 (()=>{ let y=scrollY; addEventListener("scroll",()=>{ const d=scrollY-y; if(Math.abs(d)<8) return; $("#fab").classList.toggle("tuck",d>0&&scrollY>300&&innerWidth<700); y=scrollY; },{passive:true}); })();
-let tt; function toast(m){ $("#toast").textContent=m; $("#toast").classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>$("#toast").classList.remove("on"),2200); }
+let tt; function toast(m){ $("#toast").textContent=m; $("#toast").classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>$("#toast").classList.remove("on"),m.length>40?7000:2200); }
 $("#q").oninput=e=>{F.q=e.target.value;render();};
 $("#searchBtn").onclick=()=>{goShop(); setTimeout(()=>$("#q").focus({preventScroll:true}),350);};
 $("#burger").onclick=()=>{ const on=$("#mnav").classList.toggle("on"); $("#burger").setAttribute("aria-expanded",on); };
