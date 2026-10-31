@@ -113,6 +113,9 @@ section{padding:72px 0}
 .catc .im img,.catc .im svg{width:100%;height:100%;object-fit:cover;transition:.5s}
 .catc:hover .im{box-shadow:var(--sh);transform:translateY(-4px)}
 .catc:hover .im img,.catc:hover .im svg{transform:scale(1.05)}
+.catc .im{position:relative}
+.catc .im img{position:absolute;inset:0;opacity:0;transition:opacity .9s ease,transform .5s}
+.catc .im img.on{opacity:1}
 .catc h3{font-size:15px;margin-top:12px;font-weight:600}
 
 /* gift finder */
@@ -1027,8 +1030,30 @@ document.addEventListener("click", e=>{
   const b=e.target.closest("[data-budget]"); if(b){ e.preventDefault(); const [mn,mx]=b.dataset.budget.split("-").map(Number); F.cat="All"; F.occ=""; F.rec=""; F.bud={label:"Under "+inr(mx),min:mn,max:mx}; render(); goShop(); }
 });
 
+/* photos for a category tile: its cover, then the photos of its products (up to 6) */
+function catGallery(c){
+  const urls=[c.image,...PRODUCTS.filter(p=>p.cat===c.name&&!p.hidden).map(p=>p.thumb||p.image)].filter(Boolean);
+  return [...new Set(urls)].slice(0,6);
+}
+/* each tile cycles through its photos; pauses while the visitor hovers or focuses it */
+function startCatRotator(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.querySelectorAll("#cats .catc").forEach((tile,k)=>{
+    const imgs=[...tile.querySelectorAll(".im img")]; if(imgs.length<2) return;
+    let i=0, timer=null;
+    const step=()=>{ imgs[i].classList.remove("on"); i=(i+1)%imgs.length; imgs[i].classList.add("on"); };
+    const go=()=>{ clearInterval(timer); timer=setInterval(step,3200+k*400); };
+    const stop=()=>clearInterval(timer);
+    tile.addEventListener("mouseenter",stop); tile.addEventListener("mouseleave",go);
+    tile.addEventListener("focusin",stop); tile.addEventListener("focusout",go);
+    go();
+  });
+}
 function buildCats(){
-  $("#cats").innerHTML = CATEGORIES.map(c=>`<a class="catc" href="#shop" data-goto="${esc(c.name)}"><div class="im">${pic(c.image,c.name,c.name)}</div><h3>${esc(c.name)}</h3></a>`).join("");
+  $("#cats").innerHTML = CATEGORIES.map(c=>{ const g=catGallery(c);
+    const photos=g.length?g.map((u,i)=>`<img src="${esc(u)}" alt="" width="560" height="560" loading="lazy" class="${i?"":"on"}">`).join(""):pic(c.image,c.name,c.name);
+    return `<a class="catc" href="#shop" data-goto="${esc(c.name)}"><div class="im">${photos}</div><h3>${esc(c.name)}</h3></a>`; }).join("");
+  startCatRotator();
   $("#fcats").innerHTML = CATEGORIES.map(c=>`<a href="#shop" data-goto="${esc(c.name)}">${esc(c.name)}</a>`).join("");
   $("#chips").innerHTML = ["All",...CATEGORIES.map(c=>c.name)].map(c=>`<button class="chip" data-cat="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("");
   $("#chips").onclick = e=>{ const b=e.target.closest(".chip"); if(b) catPick(b.dataset.cat); };
