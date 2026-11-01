@@ -27,11 +27,12 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
 
-    // Orders: a signed-in shopper creates their own after paying and reads only
+    // Orders: a shopper with an OTP-verified phone number creates their own after paying and reads only
     // their own. Only the admin can see every order and change its status.
     match /orders/{id} {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
+        && request.auth.token.phone_number == '+91' + request.resource.data.phone
         && request.resource.data.status == 'Paid';
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow update, delete: if isAdmin();

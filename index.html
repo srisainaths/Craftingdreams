@@ -512,6 +512,25 @@ html.pp #pp{display:block}
 .card h3 a{color:inherit;text-decoration:none}.card h3 a:hover{text-decoration:underline}
 a.add{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 @media(max-width:860px){.ppg{grid-template-columns:1fr;gap:26px}.ppg .im{position:static}.pp-wrap{padding-top:18px}}
+
+/* ================= phone OTP ================= */
+#otpov{z-index:80;align-items:flex-end;padding:0}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:30px 22px 26px;position:relative;display:grid;gap:12px;animation:sheetUp .35s ease both}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0}}
+@media(min-width:600px){#otpov{align-items:center;padding:16px}.sheet{border-radius:24px;padding:34px 30px 28px}}
+.sheet h3{font-size:24px;padding-right:44px}
+.sheet p{color:var(--muted);font-size:14.5px;margin-top:-6px}
+.sheet .x{top:12px;right:12px}
+.otp-phone{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:16px;padding:0 16px;min-height:56px;background:#fff}
+.otp-phone:focus-within{border-color:var(--ink)}
+.otp-phone b{white-space:nowrap;font-size:17px}
+.otp-phone input{border:0;outline:0;flex:1;font:inherit;font-size:18px;min-width:0;background:transparent}
+.otp-code{width:100%;text-align:center;letter-spacing:.45em;font:inherit;font-size:26px;border:2px solid var(--line);border-radius:16px;min-height:60px;background:#fff;outline:0}
+.otp-code:focus{border-color:var(--ink)}
+.sheet .lnk{background:none;color:var(--ink);text-decoration:underline;font-weight:600;font-size:14px;padding:8px;justify-self:center}
+.sheet .lnk:disabled{color:var(--muted);text-decoration:none;cursor:default}
+.sheet .fine{font-size:12px;color:var(--muted);text-align:center}
+.sheet .primary:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -763,6 +782,8 @@ a.add{display:inline-flex;align-items:center;justify-content:center;text-decorat
  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>
 </a>
 
+<div class="ov" id="otpov"><div class="sheet" id="otpBox" role="dialog" aria-modal="true" aria-label="Verify your phone number"></div></div>
+<div id="recaptcha-box"></div>
 <div class="ov" id="dov"><div class="modal done" id="doneBox" role="dialog" aria-modal="true" aria-label="Payment successful"></div></div>
 <div class="ov" id="cov"></div>
 <aside class="drawer" id="odrawer" aria-label="My orders" aria-hidden="true">
@@ -1187,7 +1208,7 @@ function openProduct(id){ const p=PRODUCTS.find(x=>x.id==id); if(p) location.hre
 document.addEventListener("click",e=>{ const o=e.target.closest("[data-open]"); if(o) openProduct(o.dataset.open); const a=e.target.closest("button[data-add]"); if(a) addToCart(+a.dataset.add,1,null,a); });
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ")&&e.target.matches(".pic[data-open]")){e.preventDefault();openProduct(e.target.dataset.open);}
-  if(e.key==="Escape"){ if($("#drawer").classList.contains("on")) closeCart(); else if($("#odrawer").classList.contains("on")) closeOrders(); else if(!$("#adm").hidden) closeAdmin(); else if($("#dov").classList.contains("on")) closeOv($("#dov")); }
+  if(e.key==="Escape"){ if($("#otpov").classList.contains("on")&&$("#otpov")._close) $("#otpov")._close(); else if($("#drawer").classList.contains("on")) closeCart(); else if($("#odrawer").classList.contains("on")) closeOrders(); else if(!$("#adm").hidden) closeAdmin(); else if($("#dov").classList.contains("on")) closeOv($("#dov")); }
 });
 
 /* ---------- state: login, prices, coupons ---------- */
@@ -1281,7 +1302,7 @@ function redrawFoot(){
    <div class="sum"><span>Shipping<span id="shipLbl">${sh&&placeOf(curPin(),sh)?` (${esc(placeOf(curPin(),sh))})`:""}</span></span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
    <div class="tot"><span>Total${sh?"":" (before shipping)"}</span><span>${inr(total())}</span></div>
    <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code. You'll customise your piece with us after payment.</div>
-   <button class="primary" id="pay">${S.fb&&!S.user?"Sign in with Google to pay":`Pay ${inr(total())} securely`}</button>`;
+   <button class="primary" id="pay">${S.fb&&!verifiedPhone()?`Verify phone &amp; pay ${inr(total())}`:`Pay ${inr(total())} securely`}</button>`;
   $("#pay").onclick=pay;
   { const pin=curPin(); if(sh&&!(pin in PINLOC)) pinPlace(pin).then(()=>{ const el=$("#shipLbl"), now2=shipNow(); if(el&&now2&&curPin()===pin) el.textContent=` (${placeOf(pin,now2)})`; }); }
   const b=$("#cpnBtn"); if(b) b.onclick=applyCoupon;
@@ -1313,9 +1334,72 @@ $("#openCart").onclick=openCart; $("#closeCart").onclick=closeCart;
 $("#cartBody").addEventListener("input",e=>{ if(e.target.id==="fz") redrawFoot(); });
 ["input","change"].forEach(ev=>$("#cartBody").addEventListener(ev,e=>{ if(e.target.classList.contains("bad")){ e.target.classList.remove("bad"); $("#ferr").textContent=""; } }));
 
+/* ---------- phone verification (OTP texted by Firebase) ---------- */
+const verifiedPhone=()=>{ const n=S.user&&S.user.phoneNumber; return n?n.replace(/\D/g,"").slice(-10):""; };
+let rcv=null;
+function otpErr(e){ const c=(e&&e.code)||"";
+  const m={"auth/invalid-phone-number":"That mobile number isn't valid.","auth/too-many-requests":"Too many attempts. Please wait a few minutes and try again.",
+    "auth/quota-exceeded":"We can't send codes right now. Please try again later or message us on WhatsApp.","auth/captcha-check-failed":"We couldn't confirm you're not a robot. Refresh the page and try again.",
+    "auth/operation-not-allowed":"Phone verification isn't switched on in Firebase yet.","auth/unauthorized-domain":"This website isn't allowed in Firebase yet (Authorised domains).",
+    "auth/invalid-verification-code":"That code isn't right. Check the SMS and try again.","auth/code-expired":"That code has expired. Ask for a new one.",
+    "auth/network-request-failed":"No connection. Check your internet and try again.","auth/missing-verification-code":"Enter the 6-digit code."}[c];
+  return m||("Verification didn't work. Please try again."+(c?" ("+c.replace("auth/","")+")":"")); }
+/* Opens the sheet; resolves true once the number is verified, false if the shopper closes it. */
+function openOtp(phone){
+  return new Promise(resolve=>{
+    const ov=$("#otpov"), box=$("#otpBox"); let conf=null, tmr=null, done=false, num=phone||"";
+    const finish=ok=>{ if(done) return; done=true; clearInterval(tmr); ov._close=null; closeOv(ov); if($("#drawer").classList.contains("on")) document.body.style.overflow="hidden"; resolve(ok); };
+    ov._close=()=>finish(false); ov.onclick=e=>{ if(e.target===ov) finish(false); };
+    const fmt=v=>v.slice(0,5)+" "+v.slice(5);
+    const sendTo=async(v,fail)=>{
+      try{ $("#recaptcha-box").innerHTML=""; rcv=new S.A.RecaptchaVerifier(S.auth,"recaptcha-box",{size:"invisible"});
+        const full="+91"+v; num=v;
+        conf=(S.user&&!S.user.phoneNumber)?await S.A.linkWithPhoneNumber(S.user,full,rcv):await S.A.signInWithPhoneNumber(S.auth,full,rcv);
+        stepCode();
+      }catch(e){ console.warn("OTP send",e); try{ rcv&&rcv.clear(); }catch(_){} rcv=null; fail(otpErr(e)); } };
+    function stepPhone(msg){
+      clearInterval(tmr);
+      box.innerHTML=`<button class="x" id="otpx" aria-label="Close">×</button><h3>Almost there…</h3><p>Verify your phone number to place an order</p>
+       <label class="otp-phone"><b>🇮🇳 +91</b><input id="otpPhone" inputmode="numeric" maxlength="10" autocomplete="tel-national" aria-label="Mobile number" value="${esc(num)}" placeholder="10-digit mobile number"></label>
+       <div class="err" id="otpErr" role="alert">${esc(msg||"")}</div>
+       <button class="primary" id="otpSend">Verify with OTP</button><div class="fine">We'll text you a 6-digit code. Standard SMS charges may apply.</div>`;
+      $("#otpx").onclick=()=>finish(false);
+      const go=()=>{ const v=$("#otpPhone").value.replace(/\D/g,""); if(!/^[6-9]\d{9}$/.test(v)){ $("#otpErr").textContent="Enter a valid 10-digit mobile number."; return; }
+        $("#otpErr").textContent=""; $("#otpSend").disabled=true; $("#otpSend").textContent="Sending…";
+        sendTo(v,m=>{ $("#otpErr").textContent=m; $("#otpSend").disabled=false; $("#otpSend").textContent="Verify with OTP"; }); };
+      $("#otpSend").onclick=go; $("#otpPhone").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } };
+      $("#otpPhone").oninput=e=>{ e.target.value=e.target.value.replace(/\D/g,""); };
+      $("#otpPhone").focus();
+    }
+    function stepCode(){
+      box.innerHTML=`<button class="x" id="otpx" aria-label="Close">×</button><h3>Enter the code</h3><p>We sent a 6-digit code to +91 ${esc(fmt(num))}. <button class="lnk" id="otpChange" style="padding:0">Change number</button></p>
+       <input class="otp-code" id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-label="6-digit code" placeholder="······">
+       <div class="err" id="otpErr" role="alert"></div>
+       <button class="primary" id="otpVerify">Verify and continue</button><button class="lnk" id="otpResend" disabled>Resend code in 30s</button>`;
+      $("#otpx").onclick=()=>finish(false); $("#otpChange").onclick=()=>stepPhone();
+      let left=30; const rs=$("#otpResend"); clearInterval(tmr);
+      tmr=setInterval(()=>{ left--; if(left<=0){ clearInterval(tmr); rs.disabled=false; rs.textContent="Resend code"; } else rs.textContent=`Resend code in ${left}s`; },1000);
+      rs.onclick=()=>{ rs.disabled=true; rs.textContent="Sending…"; sendTo(num,m=>{ stepPhone(m); }); };
+      const code=$("#otpCode"); code.focus();
+      code.oninput=()=>{ code.value=code.value.replace(/\D/g,""); $("#otpErr").textContent=""; if(code.value.length===6) check(); };
+      $("#otpVerify").onclick=check; code.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); check(); } };
+      async function check(){
+        const c=code.value.replace(/\D/g,""); if(c.length!==6){ $("#otpErr").textContent="Enter the 6-digit code."; return; }
+        const b=$("#otpVerify"); if(b.disabled) return; b.disabled=true; b.textContent="Verifying…";
+        try{ await conf.confirm(c); }
+        catch(e){ const k=(e&&e.code)||"";
+          if(k==="auth/credential-already-in-use"||k==="auth/account-exists-with-different-credential"){
+            try{ await S.A.signInWithCredential(S.auth,S.A.PhoneAuthProvider.credentialFromError(e)); }catch(e2){ $("#otpErr").textContent=otpErr(e2); b.disabled=false; b.textContent="Verify and continue"; return; } }
+          else{ $("#otpErr").textContent=otpErr(e); b.disabled=false; b.textContent="Verify and continue"; return; } }
+        S.user=S.auth.currentUser; drawAcctBtn(); const fp=$("#fp"); if(fp) fp.value=num; toast("Phone number verified"); finish(true);
+      }
+    }
+    stepPhone(); openOv(ov,$("#otpPhone"));
+  });
+}
+
 /* ---------- checkout ---------- */
 function pay(){
-  if(S.fb&&!S.user){ signIn(); return; }
   const v=id=>document.getElementById(id).value.trim();
   const d={name:v("fn"),phone:v("fp"),house:v("fh"),bldg:v("fb"),street:v("fs"),area:v("fa"),city:v("fc"),state:v("fst"),pin:v("fz")};
   const need=[["fn",!d.name,"Please enter your name."],["fp",!/^[6-9]\d{9}$/.test(d.phone),"Please enter a valid 10-digit mobile number."],
@@ -1326,6 +1410,7 @@ function pay(){
   const miss=need.find(n=>n[1]);
   if(miss){ $("#ferr").textContent=miss[2]; const el=document.getElementById(miss[0]); el.classList.add("bad"); el.focus(); return; }
   $("#ferr").textContent="";
+  if(S.fb&&verifiedPhone()!==d.phone){ openOtp(d.phone).then(ok=>{ if(ok) pay(); }); return; }
   d.addr=[d.house,d.bldg,d.street,d.area].filter(Boolean).join(", "); d.cityOnly=d.city; d.city=d.city+", "+d.state;
   if(!window.Razorpay){ $("#ferr").textContent="Payments couldn't load. Please check your connection and try again."; return; }
   if(/X{6}/.test(CONFIG.razorpayKey)){ $("#ferr").textContent="Online payment isn't set up yet (Razorpay key missing)."; return; }
@@ -1346,7 +1431,7 @@ function success(pid,d){
     address:{house:d.house,building:d.bldg,street:d.street,area:d.area,city:d.cityOnly,state:d.state,pin:d.pin},
     items:cart.map(i=>{const p=PRODUCTS.find(x=>x.id===i.id); return {id:p.id,name:itemName(p,i.size),size:i.size||null,q:i.q,price:now(p,i.size)};}),
     subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,cartKg())||{}).amt||0,shippingKg:(shipFor(d.pin,cartKg())||{}).kg||0,shippingZone:(()=>{ const x=shipFor(d.pin,cartKg()); return x?(placeOf(d.pin,x)||x.zone):""; })(),total:total(),
-    paymentId:pid,status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
+    paymentId:pid,phoneVerified:!!(S.fb&&verifiedPhone()===d.phone),status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
   if(S.user) S.F.setDoc(S.F.doc(S.db,"orders",pid),order).catch(e=>console.warn("Order not saved",e));
   const lines=order.items.map(i=>`• ${i.name} x${i.q} (${inr(i.price*i.q)})`).join("\n");
   const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;

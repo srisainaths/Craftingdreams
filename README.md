@@ -25,3 +25,10 @@ Frames and varamala art have size choices (8 to 12 inch), set by `SIZED_CATS` an
 Shipping is added at checkout from the delivery PIN code and the packed weight of the order. `SHIPPING` in `index.html` has, for each zone,
 a base charge and a charge per kg, plus the PIN ranges (first three digits). Piece weights are `kg` on each size in `TIERS`, and `DEFAULT_KG` for pieces without sizes.
 Change the numbers there, then commit and push.
+
+## Phone verification (OTP)
+
+When Firebase is set up, paying needs an OTP-verified mobile number: the shopper enters the number in the delivery form, taps Pay, and a sheet texts a 6-digit code (Firebase Phone sign-in).
+To switch it on: Firebase console > Authentication > Sign-in method > Phone > Enable, and make sure the website's domain is in Authorised domains.
+Then publish the updated `firestore.rules`, which also checks on the server that an order's phone number is the verified one.
+While `FIREBASE.apiKey` is empty the site has no login, so no OTP is asked.
