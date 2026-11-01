@@ -27,7 +27,8 @@ const arr = grab(/const PRODUCTS = (\[[\s\S]*?\n\]);/, "PRODUCTS");
 const whatsapp = grab(/whatsapp:\s*"(\d+)"/, "CONFIG.whatsapp");
 const shopName = grab(/shopName:\s*"([^"]+)"/, "CONFIG.shopName");
 const PRODUCTS = new Function("IMG_VARAMALA", "return " + arr)(JSON.parse(imgVar));
-const SIZED = ["Resin Frames", "Varamala Preservation Teakwood Frames"];
+const TIERS = new Function("return " + grab(/const TIERS = (\{[\s\S]*?\n\});/, "TIERS"))();
+for (const p of PRODUCTS) { p.tiers = TIERS[p.tier] || null; if (p.tiers) p.price = Math.min(...p.tiers.map((t) => t.price)); }
 
 const seen = new Set();
 for (const p of PRODUCTS) {
@@ -38,7 +39,7 @@ for (const p of PRODUCTS) {
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const inr = (n) => "₹" + n.toLocaleString("en-IN");
-const priceText = (p) => (SIZED.includes(p.cat) ? "From " : "") + inr(p.price);
+const priceText = (p) => (p.tiers ? "From " : "") + inr(p.price);
 const url = (p) => `/product/${p.slug}/`;
 const waLink = (p) => `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi ${shopName}! I would like to order: ${p.name} (${priceText(p)})`)}`;
 const abs = (img) => SITE + "/" + (img || "images/share.jpg").replace(/^\//, "");
@@ -82,7 +83,9 @@ for (const p of PRODUCTS) {
   const ld = {
     "@context": "https://schema.org", "@type": "Product", name: p.name, description: p.desc, image: abs(p.image), category: p.cat,
     brand: { "@type": "Brand", name: shopName },
-    offers: { "@type": "Offer", priceCurrency: "INR", price: p.price, availability: "https://schema.org/InStock", url: link },
+    offers: p.tiers
+      ? { "@type": "AggregateOffer", priceCurrency: "INR", lowPrice: p.price, highPrice: Math.max(...p.tiers.map((t) => t.price)), offerCount: p.tiers.length, availability: "https://schema.org/InStock", url: link }
+      : { "@type": "Offer", priceCurrency: "INR", price: p.price, availability: "https://schema.org/InStock", url: link },
   };
   const head =
     `<base href="/">\n<script>window.CD_PRODUCT=${JSON.stringify(p.slug)};document.documentElement.classList.add("pp");</script>\n` +
@@ -91,7 +94,7 @@ for (const p of PRODUCTS) {
   const ns =
     `<noscript>\n${nsStyle}\n<div class="nsw"><p><a href="/">&larr; All products</a></p><h1>${esc(p.name)}</h1>` +
     `${p.image ? `<p><img src="${esc(p.image)}" alt="${esc(p.name)}" style="max-width:420px;width:100%;border-radius:18px"></p>` : ""}` +
-    `<p>${esc(p.desc)}</p><p><b>${priceText(p)}</b></p>${SIZED.includes(p.cat) ? "<p>Available in 8, 9, 10, 11 and 12 inch.</p>" : ""}` +
+    `<p>${esc(p.desc)}</p><p><b>${priceText(p)}</b></p>${p.tiers ? "<p>Sizes (shipping extra): " + p.tiers.map((t) => esc(t.label) + " " + inr(t.price)).join(", ") + ".</p>" : ""}` +
     `<p><a href="${waLink(p)}" style="display:inline-block;background:#1D8A3B;color:#fff;text-decoration:none;border-radius:99px;padding:12px 22px;font-weight:600">Order on WhatsApp</a></p></div>\n</noscript>`;
   page = swap(page, /<noscript>[\s\S]*?<\/noscript>/, ns, "noscript");
   const dir = path.join(ROOT, "product", p.slug);
