@@ -497,6 +497,11 @@ html.pp #pp{display:block}
 .sizes span{display:inline-flex;align-items:center;justify-content:center;min-width:76px;min-height:46px;padding:0 16px;border-radius:99px;border:2px solid var(--line);background:#fff;font-weight:600;font-size:14.5px;transition:.2s}
 .sizes span{flex-direction:column;gap:2px;padding:6px 16px}.sizes small{font-weight:500;font-size:12.5px;opacity:.8}
 .ship{font-size:13px;color:var(--muted);margin-top:-8px}
+.pinchk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px}
+.pinchk label{font-weight:600}
+.pinchk input{width:150px;padding:9px 14px;border:2px solid var(--line);border-radius:99px;font:inherit;background:#fff}
+.pinchk input:focus{outline:none;border-color:var(--ink)}
+.pinchk span{color:var(--ink-2);font-weight:600}
 .sizes input:hover+span{border-color:var(--ink)}
 .sizes input:checked+span{background:var(--ink);color:#fff;border-color:var(--ink)}
 .sizes input:focus-visible+span{outline:3px solid var(--ink-2);outline-offset:2px}
@@ -722,7 +727,7 @@ a.add{display:inline-flex;align-items:center;justify-content:center;text-decorat
    <details><summary>How long does an order take?</summary><p>Most pieces take 5–10 working days including curing time. Varamala and baby casting pieces can take longer; we'll confirm the timeline on WhatsApp.</p></details>
    <details><summary>How do I customise my order?</summary><p>Choose your item and pay online. After payment, message us on WhatsApp with your names, dates and colours, and we'll confirm the design before we start.</p></details>
    <details><summary>How do I pay?</summary><p>Pay securely at checkout with UPI, cards or netbanking through Razorpay.</p></details>
-   <details><summary>How much is delivery?</summary><p>Delivery charges depend on your location and are confirmed on WhatsApp.</p></details>
+   <details><summary>How much is delivery?</summary><p id="faqShip">Shipping is added at checkout based on your delivery PIN code.</p></details>
    <details><summary>How do I care for my resin piece?</summary><p>Keep it away from direct sunlight and heat, and wipe it gently with a soft, dry cloth.</p></details>
   </div>
  </div>
@@ -863,6 +868,19 @@ const TIERS = {
   wood:[{label:"8 inch",price:2999},{label:"10 inch",price:3999},{label:"12 inch",price:4999},{label:"14 inch",price:5999}],
   inner:[{label:"12 × 9 inch",price:4499},{label:"12 × 16 inch",price:5499}],
   free:[{label:"8 inch",price:1499},{label:"10 inch",price:2499},{label:"12 inch",price:3499}]
+};
+
+/* Shipping by PIN code (rupees). The first three digits of the PIN pick the zone.
+   first = charge for the first piece, extra = added for each further piece in the same order.
+   pins = [from, to] ranges of the first three digits. Any other PIN uses "rest". */
+const SHIPPING = {
+  zones:[
+    {name:"Hyderabad", first:80, extra:40, pins:[[500,501]]},
+    {name:"Telangana & Andhra Pradesh", first:120, extra:60, pins:[[502,509],[515,535]]},
+    {name:"South India", first:180, extra:90, pins:[[560,649],[670,699]]},
+    {name:"North-East, J&K and islands", first:350, extra:175, pins:[[180,199],[737,737],[744,744],[780,799]]}
+  ],
+  rest:{name:"Rest of India", first:250, extra:125}
 };
 
 /* Products: sample items, replace with the real ones */
@@ -1192,7 +1210,14 @@ const subtotal=()=>cart.reduce((s,i)=>s+now(PRODUCTS.find(p=>p.id===i.id),i.size
 let coupon=null; // {code,type,value,minOrder}
 function couponOff(){ if(!coupon) return 0; const s=subtotal(); if(s<(coupon.minOrder||0)) return 0;
   return Math.min(s, coupon.type==="flat"?coupon.value:Math.round(s*coupon.value/100)); }
-const total=()=>subtotal()-couponOff();
+const pinOk=p=>/^\d{6}$/.test(p);
+function shipFor(pin,count){ if(!pinOk(pin)) return null; const n=+pin.slice(0,3);
+  const z=SHIPPING.zones.find(z=>z.pins.some(([a,b])=>n>=a&&n<=b))||SHIPPING.rest;
+  return {zone:z.name,amt:z.first+z.extra*Math.max(0,count-1)}; }
+const curPin=()=>((document.getElementById("fz")||{}).value||"").trim();
+const itemCount=()=>cart.reduce((s,i)=>s+i.q,0);
+const shipNow=()=>shipFor(curPin(),itemCount());
+const total=()=>subtotal()-couponOff()+((shipNow()||{}).amt||0);
 const itemName=(p,size)=>p.name+(size?` (${size})`:"");
 function addToCart(id,q,size,src){ const p=PRODUCTS.find(x=>x.id===id); if(!p||p.hidden){ toast("This item isn't available right now"); return; }
   if(p.tiers&&!p.tiers.some(t=>t.label===size)){ toast("Please choose a size"); return; }
@@ -1232,14 +1257,15 @@ function drawCart(){
 }
 function redrawFoot(){
   if(!cart.length) return;
-  const off=couponOff(), short=coupon&&subtotal()<(coupon.minOrder||0);
+  const off=couponOff(), short=coupon&&subtotal()<(coupon.minOrder||0), sh=shipNow();
   $("#cartFoot").innerHTML=`${S.fb?`<div class="cpn"><label for="cpn">Coupon code</label>
      <div class="cpn-row"><input id="cpn" placeholder="Enter code" autocomplete="off" autocapitalize="characters" value="${coupon?esc(coupon.code):""}" ${coupon?"disabled":""}><button type="button" class="btn line sm" id="cpnBtn">${coupon?"Remove":"Apply"}</button></div>
      <div class="cpn-msg${coupon&&!short?" ok":""}" id="cpnMsg" role="status">${coupon?(short?`Add ${inr(coupon.minOrder-subtotal())} more to use ${esc(coupon.code)}.`:`${esc(coupon.code)} applied. You save ${inr(off)}.`):""}</div></div>`:""}
    <div class="sum"><span>Subtotal</span><span>${inr(subtotal())}</span></div>
    ${off?`<div class="sum save"><span>Coupon ${esc(coupon.code)}</span><span>−${inr(off)}</span></div>`:""}
-   <div class="tot"><span>Total</span><span>${inr(total())}</span></div>
-   <div style="font-size:12.5px;color:var(--muted)">Prices exclude shipping. Delivery charges are confirmed on WhatsApp. You'll customise your piece with us after payment.</div>
+   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)})`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
+   <div class="tot"><span>Total${sh?"":" (before shipping)"}</span><span>${inr(total())}</span></div>
+   <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code. You'll customise your piece with us after payment.</div>
    <button class="primary" id="pay">${S.fb&&!S.user?"Sign in with Google to pay":`Pay ${inr(total())} securely`}</button>`;
   $("#pay").onclick=pay;
   const b=$("#cpnBtn"); if(b) b.onclick=applyCoupon;
@@ -1268,6 +1294,7 @@ $("#cartBody").onclick=e=>{ const t=e.target.closest("button"); if(!t) return; c
 function openCart(){ lastFocus=document.activeElement; $("#drawer").classList.add("on"); $("#drawer").setAttribute("aria-hidden","false"); $("#cov").classList.add("on"); document.body.style.overflow="hidden"; $("#closeCart").focus(); }
 function closeCart(){ $("#drawer").classList.remove("on"); $("#drawer").setAttribute("aria-hidden","true"); $("#cov").classList.remove("on"); document.body.style.overflow=""; lastFocus?.focus?.(); }
 $("#openCart").onclick=openCart; $("#closeCart").onclick=closeCart;
+$("#cartBody").addEventListener("input",e=>{ if(e.target.id==="fz") redrawFoot(); });
 ["input","change"].forEach(ev=>$("#cartBody").addEventListener(ev,e=>{ if(e.target.classList.contains("bad")){ e.target.classList.remove("bad"); $("#ferr").textContent=""; } }));
 
 /* ---------- checkout ---------- */
@@ -1290,7 +1317,7 @@ function pay(){
   const rz=new Razorpay({
     key:CONFIG.razorpayKey, amount:total()*100, currency:CONFIG.currency, name:CONFIG.shopName,
     description:items.slice(0,250), prefill:{name:d.name,contact:"+91"+d.phone,email:S.user?S.user.email||"":""},
-    notes:{address:`${d.addr}, ${d.city} - ${d.pin}`.slice(0,250),items:items.slice(0,250),coupon:coupon&&couponOff()?coupon.code:""},
+    notes:{shipping:String((shipFor(d.pin,itemCount())||{}).amt||0),address:`${d.addr}, ${d.city} - ${d.pin}`.slice(0,250),items:items.slice(0,250),coupon:coupon&&couponOff()?coupon.code:""},
     theme:{color:"#2E1065"},
     handler:r=>success(r.razorpay_payment_id,d)
   });
@@ -1302,11 +1329,11 @@ function success(pid,d){
   const order={uid:S.user?S.user.uid:"",email:S.user?S.user.email||"":"",name:d.name,phone:d.phone,
     address:{house:d.house,building:d.bldg,street:d.street,area:d.area,city:d.cityOnly,state:d.state,pin:d.pin},
     items:cart.map(i=>{const p=PRODUCTS.find(x=>x.id===i.id); return {id:p.id,name:itemName(p,i.size),size:i.size||null,q:i.q,price:now(p,i.size)};}),
-    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",total:total(),
+    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,itemCount())||{}).amt||0,shippingZone:(shipFor(d.pin,itemCount())||{}).zone||"",total:total(),
     paymentId:pid,status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
   if(S.user) S.F.setDoc(S.F.doc(S.db,"orders",pid),order).catch(e=>console.warn("Order not saved",e));
   const lines=order.items.map(i=>`• ${i.name} x${i.q} (${inr(i.price*i.q)})`).join("\n");
-  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Total paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
+  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
   const url=`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
   cart=[]; coupon=null; save(); drawCart(); closeCart();
   $("#doneBox").innerHTML=`<div class="tick" aria-hidden="true">✓</div><h3>Payment successful</h3>
@@ -1364,7 +1391,7 @@ function orderCard(o){
   const k=STEPS.indexOf(o.status);
   return `<div class="ord"><div class="oh2"><b>${fmtDate(o.createdAt)}</b><span>Payment ${esc(o.paymentId)}</span></div>
    <ul>${(o.items||[]).map(i=>`<li>${esc(i.name)} × ${esc(i.q)}</li>`).join("")}</ul>
-   <div class="ot"><span>Total paid${o.discount?` (saved ${inr(o.discount)})`:""}</span><b>${inr(o.total)}</b></div>
+   <div class="ot"><span>Total paid${o.shipping?` (incl. ${inr(o.shipping)} shipping)`:""}${o.discount?` (saved ${inr(o.discount)})`:""}</span><b>${inr(o.total)}</b></div>
    ${o.status==="Cancelled"?`<span class="st cx">Cancelled</span>`:`<ol class="track" aria-label="Order status: ${esc(o.status)}">${STEPS.map((s,i)=>`<li class="${i<=k?"on":""}">${s}</li>`).join("")}</ol>`}</div>`;
 }
 async function drawAcct(){
@@ -1442,7 +1469,7 @@ function admOrderRow(o){
     <label class="asel"><span>Status</span><select data-st="${esc(o._id)}" aria-label="Status for ${esc(o.name)}'s order">${[...STEPS,"Cancelled"].map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></label></div>
    <ul>${(o.items||[]).map(i=>`<li><span>${esc(i.name)} × ${esc(i.q)}</span><span>${inr((+i.price||0)*(+i.q||0))}</span></li>`).join("")}</ul>
    <div class="aord-f"><span>${esc([a.house,a.building,a.street,a.area,a.city,a.state].filter(Boolean).join(", "))}${a.pin?` – ${esc(a.pin)}`:""}</span>
-   <span>${o.discount?`Coupon ${esc(o.coupon)} −${inr(o.discount)} · `:""}<b>Total ${inr(o.total)}</b></span></div></article>`;
+   <span>${o.discount?`Coupon ${esc(o.coupon)} −${inr(o.discount)} · `:""}${o.shipping?`Shipping ${inr(o.shipping)} · `:""}<b>Total ${inr(o.total)}</b></span></div></article>`;
 }
 
 function admProductsView(){
@@ -1578,7 +1605,7 @@ function buildProductPage(){
     <div class="ppi">
      <span class="ct">${esc(p.cat)}</span>
      <h1>${esc(p.name)}</h1>
-     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping. Delivery charges are confirmed on WhatsApp.</p>
+     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping, which is added at checkout from your PIN code.</p><div class="pinchk"><label for="pinq">Check shipping</label><input id="pinq" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="Your PIN code"><span id="pinr" role="status"></span></div>
      <p class="tl">${esc(p.tagline||"")}</p>
      <p class="ds">${esc(p.desc)}</p>
      ${p.tiers?`<fieldset class="sizes"><legend>Choose a size</legend><div class="opts">${p.tiers.map(t=>`<label><input type="radio" name="size" value="${esc(t.label)}"><span>${esc(t.label)}<small>${inr(now(p,t.label))}</small></span></label>`).join("")}</div><div class="sz-err" id="szErr" role="alert"></div></fieldset>`:""}
@@ -1590,6 +1617,8 @@ function buildProductPage(){
    </div>
    ${more.length?`<div class="related"><h2>You may also like</h2><div class="grid">${more.map(card).join("")}</div></div>`:""}
   </div>`;
+  $("#pinq").oninput=e=>{ const v=e.target.value.replace(/\D/g,""); e.target.value=v; const r=shipFor(v,1);
+    $("#pinr").textContent=r?`${r.zone}: ${inr(r.amt)} shipping`:(v.length===6?"":(v?"Enter all 6 digits":"")); };
   ppSize=null; ppQty=1; refreshPP();
   el.querySelectorAll('input[name="size"]').forEach(r=>r.onchange=()=>{ ppSize=r.value; $("#szErr").textContent=""; refreshPP(); });
   $("#qm").onclick=()=>{ ppQty=Math.max(1,ppQty-1); $("#qv").textContent=ppQty; }; $("#qp").onclick=()=>{ ppQty++; $("#qv").textContent=ppQty; };
@@ -1601,6 +1630,8 @@ function refreshPP(){
   pr.innerHTML=(p.tiers&&!ppSize?"From ":"")+priceHTML(p,ppSize); $("#ppAdd").disabled=!!p.hidden; if(p.hidden) $("#ppAdd").textContent="Not available right now";
 }
 
+{ const z=[...SHIPPING.zones,SHIPPING.rest], lo=Math.min(...z.map(x=>x.first)); const f=document.getElementById("faqShip");
+  if(f) f.textContent=`Shipping is added at checkout based on your delivery PIN code, from ${inr(lo)} within Hyderabad to ${inr(SHIPPING.rest.first)} for most of India. Each extra piece in the same order adds a smaller amount.`; }
 buildHero(); buildVaramalaWork(); buildCats(); buildFinder(); render(); buildBudget(); buildReviews(); drawCart();
 if(window.CD_PRODUCT) buildProductPage();
 else { const qc=new URLSearchParams(location.search).get("cat"); if(qc&&CATEGORIES.some(c=>c.name===qc)){ catPick(qc); goShop(); } }

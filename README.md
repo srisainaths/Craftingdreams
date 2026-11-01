@@ -19,3 +19,9 @@ After you change a product (name, price, photo, description), run:
 then commit the changes, including the `product/` folder and `sitemap.xml`. Each product needs a unique `slug` in `index.html`.
 
 Frames and varamala art have size choices (8 to 12 inch), set by `SIZED_CATS` and `SIZES` in `index.html`.
+
+## Shipping rates
+
+Shipping is added at checkout from the delivery PIN code. The rates are in `SHIPPING` near the top of the script in `index.html`:
+a charge for the first piece, a smaller charge for each extra piece, and the PIN ranges (first three digits) for each zone.
+Change the numbers there, then commit and push.
