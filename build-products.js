@@ -27,7 +27,7 @@ const arr = grab(/const PRODUCTS = (\[[\s\S]*?\n\]);/, "PRODUCTS");
 const whatsapp = grab(/whatsapp:\s*"(\d+)"/, "CONFIG.whatsapp");
 const shopName = grab(/shopName:\s*"([^"]+)"/, "CONFIG.shopName");
 const PRODUCTS = new Function("IMG_VARAMALA", "return " + arr)(JSON.parse(imgVar));
-const SIZED = ["Resin Frames", "Varamala Art"];
+const SIZED = ["Resin Frames", "Varamala Preservation Teakwood Frames"];
 
 const seen = new Set();
 for (const p of PRODUCTS) {
