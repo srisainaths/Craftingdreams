@@ -1217,9 +1217,9 @@ function redrawFoot(){
      <div class="cpn-msg${coupon&&!short?" ok":""}" id="cpnMsg" role="status">${coupon?(short?`Add ${inr(coupon.minOrder-subtotal())} more to use ${esc(coupon.code)}.`:`${esc(coupon.code)} applied. You save ${inr(off)}.`):""}</div></div>`:""}
    <div class="sum"><span>Subtotal</span><span>${inr(subtotal())}</span></div>
    ${off?`<div class="sum save"><span>Coupon ${esc(coupon.code)}</span><span>−${inr(off)}</span></div>`:""}
-   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)}, ${sh.kg} kg)`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
+   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)})`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
    <div class="tot"><span>Total${sh?"":" (before shipping)"}</span><span>${inr(total())}</span></div>
-   <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code and the packed weight of your order. You'll customise your piece with us after payment.</div>
+   <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code. You'll customise your piece with us after payment.</div>
    <button class="primary" id="pay">${S.fb&&!S.user?"Sign in with Google to pay":`Pay ${inr(total())} securely`}</button>`;
   $("#pay").onclick=pay;
   const b=$("#cpnBtn"); if(b) b.onclick=applyCoupon;
@@ -1287,7 +1287,7 @@ function success(pid,d){
     paymentId:pid,status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
   if(S.user) S.F.setDoc(S.F.doc(S.db,"orders",pid),order).catch(e=>console.warn("Order not saved",e));
   const lines=order.items.map(i=>`• ${i.name} x${i.q} (${inr(i.price*i.q)})`).join("\n");
-  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}, ${order.shippingKg} kg): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
+  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
   const url=`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
   cart=[]; coupon=null; save(); drawCart(); closeCart();
   $("#doneBox").innerHTML=`<div class="tick" aria-hidden="true">✓</div><h3>Payment successful</h3>
@@ -1560,7 +1560,7 @@ function buildProductPage(){
     <div class="ppi">
      <span class="ct">${esc(p.cat)}</span>
      <h1>${esc(p.name)}</h1>
-     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping, which is added at checkout from your PIN code and the packed weight (2 to 5 kg per piece).</p><div class="pinchk"><label for="pinq">Check shipping</label><input id="pinq" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="Your PIN code"><span id="pinr" role="status"></span></div>
+     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping, which is added at checkout from your PIN code.</p><div class="pinchk"><label for="pinq">Check shipping</label><input id="pinq" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="Your PIN code"><span id="pinr" role="status"></span></div>
      <p class="tl">${esc(p.tagline||"")}</p>
      <p class="ds">${esc(p.desc)}</p>
      ${p.tiers?`<fieldset class="sizes"><legend>Choose a size</legend><div class="opts">${p.tiers.map(t=>`<label><input type="radio" name="size" value="${esc(t.label)}"><span>${esc(t.label)}<small>${inr(now(p,t.label))}</small></span></label>`).join("")}</div><div class="sz-err" id="szErr" role="alert"></div></fieldset>`:""}
@@ -1586,7 +1586,7 @@ function refreshPP(){
 }
 
 { const f=document.getElementById("faqShip");
-  if(f) f.textContent="Shipping is added at checkout from your delivery PIN code and the packed weight of your order (each piece weighs 2 to 5 kg once packed). Type your PIN on any product page to see the charge."; }
+  if(f) f.textContent="Shipping is added at checkout based on your delivery PIN code. Type your PIN on any product page to see the charge."; }
 buildHero(); buildVaramalaWork(); buildCats(); buildFinder(); render(); buildBudget(); buildReviews(); drawCart();
 if(window.CD_PRODUCT) buildProductPage();
 else { const qc=new URLSearchParams(location.search).get("cat"); if(qc&&CATEGORIES.some(c=>c.name===qc)){ catPick(qc); goShop(); } }
