@@ -22,6 +22,6 @@ Frames and varamala art have size choices (8 to 12 inch), set by `SIZED_CATS` an
 
 ## Shipping rates
 
-Shipping is added at checkout from the delivery PIN code. The rates are in `SHIPPING` near the top of the script in `index.html`:
-a charge for the first piece, a smaller charge for each extra piece, and the PIN ranges (first three digits) for each zone.
+Shipping is added at checkout from the delivery PIN code and the packed weight of the order. `SHIPPING` in `index.html` has, for each zone,
+a base charge and a charge per kg, plus the PIN ranges (first three digits). Piece weights are `kg` on each size in `TIERS`, and `DEFAULT_KG` for pieces without sizes.
 Change the numbers there, then commit and push.

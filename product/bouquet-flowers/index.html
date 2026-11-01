@@ -815,23 +815,25 @@ const BUDGETS = [{label:"Under ₹500",min:0,max:500},{label:"₹500 – ₹1,00
 
 /* Sizes and prices (rupees, shipping not included). A product opts in with tier:"wood" | "inner" | "free".
      wood  = varamala in a wooden frame     inner = frame-in-frame     free = frameless resin */
+/* kg = packed weight of one piece (used for shipping). Pieces without sizes weigh DEFAULT_KG unless they have kg:... */
+const DEFAULT_KG = 2;
 const TIERS = {
-  wood:[{label:"8 inch",price:2999},{label:"10 inch",price:3999},{label:"12 inch",price:4999},{label:"14 inch",price:5999}],
-  inner:[{label:"12 × 9 inch",price:4499},{label:"12 × 16 inch",price:5499}],
-  free:[{label:"8 inch",price:1499},{label:"10 inch",price:2499},{label:"12 inch",price:3499}]
+  wood:[{label:"8 inch",price:2999,kg:2},{label:"10 inch",price:3999,kg:3},{label:"12 inch",price:4999,kg:4},{label:"14 inch",price:5999,kg:5}],
+  inner:[{label:"12 × 9 inch",price:4499,kg:4},{label:"12 × 16 inch",price:5499,kg:5}],
+  free:[{label:"8 inch",price:1499,kg:2},{label:"10 inch",price:2499,kg:3},{label:"12 inch",price:3499,kg:4}]
 };
 
 /* Shipping by PIN code (rupees). The first three digits of the PIN pick the zone.
-   first = charge for the first piece, extra = added for each further piece in the same order.
+   charge = base + perKg x packed weight of the whole order, rounded to the nearest 10.
    pins = [from, to] ranges of the first three digits. Any other PIN uses "rest". */
 const SHIPPING = {
   zones:[
-    {name:"Hyderabad", first:80, extra:40, pins:[[500,501]]},
-    {name:"Telangana & Andhra Pradesh", first:120, extra:60, pins:[[502,509],[515,535]]},
-    {name:"South India", first:180, extra:90, pins:[[560,649],[670,699]]},
-    {name:"North-East, J&K and islands", first:350, extra:175, pins:[[180,199],[737,737],[744,744],[780,799]]}
+    {name:"Hyderabad", base:30, perKg:25, pins:[[500,501]]},
+    {name:"Telangana & Andhra Pradesh", base:50, perKg:40, pins:[[502,509],[515,535]]},
+    {name:"South India", base:70, perKg:70, pins:[[560,649],[670,699]]},
+    {name:"North-East, J&K and islands", base:150, perKg:140, pins:[[180,199],[737,737],[744,744],[780,799]]}
   ],
-  rest:{name:"Rest of India", first:250, extra:125}
+  rest:{name:"Rest of India", base:90, perKg:100}
 };
 
 /* Products: sample items, replace with the real ones */
@@ -1162,12 +1164,13 @@ let coupon=null; // {code,type,value,minOrder}
 function couponOff(){ if(!coupon) return 0; const s=subtotal(); if(s<(coupon.minOrder||0)) return 0;
   return Math.min(s, coupon.type==="flat"?coupon.value:Math.round(s*coupon.value/100)); }
 const pinOk=p=>/^\d{6}$/.test(p);
-function shipFor(pin,count){ if(!pinOk(pin)) return null; const n=+pin.slice(0,3);
+const itemKg=(p,size)=>{ const t=p.tiers&&p.tiers.find(t=>t.label===size); return (t&&t.kg)||p.kg||DEFAULT_KG; };
+function shipFor(pin,kg){ if(!pinOk(pin)) return null; const n=+pin.slice(0,3);
   const z=SHIPPING.zones.find(z=>z.pins.some(([a,b])=>n>=a&&n<=b))||SHIPPING.rest;
-  return {zone:z.name,amt:z.first+z.extra*Math.max(0,count-1)}; }
+  return {zone:z.name,kg,amt:Math.round((z.base+z.perKg*kg)/10)*10}; }
 const curPin=()=>((document.getElementById("fz")||{}).value||"").trim();
-const itemCount=()=>cart.reduce((s,i)=>s+i.q,0);
-const shipNow=()=>shipFor(curPin(),itemCount());
+const cartKg=()=>cart.reduce((s,i)=>s+itemKg(PRODUCTS.find(p=>p.id===i.id),i.size)*i.q,0);
+const shipNow=()=>shipFor(curPin(),cartKg());
 const total=()=>subtotal()-couponOff()+((shipNow()||{}).amt||0);
 const itemName=(p,size)=>p.name+(size?` (${size})`:"");
 function addToCart(id,q,size,src){ const p=PRODUCTS.find(x=>x.id===id); if(!p||p.hidden){ toast("This item isn't available right now"); return; }
@@ -1214,9 +1217,9 @@ function redrawFoot(){
      <div class="cpn-msg${coupon&&!short?" ok":""}" id="cpnMsg" role="status">${coupon?(short?`Add ${inr(coupon.minOrder-subtotal())} more to use ${esc(coupon.code)}.`:`${esc(coupon.code)} applied. You save ${inr(off)}.`):""}</div></div>`:""}
    <div class="sum"><span>Subtotal</span><span>${inr(subtotal())}</span></div>
    ${off?`<div class="sum save"><span>Coupon ${esc(coupon.code)}</span><span>−${inr(off)}</span></div>`:""}
-   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)})`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
+   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)}, ${sh.kg} kg)`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
    <div class="tot"><span>Total${sh?"":" (before shipping)"}</span><span>${inr(total())}</span></div>
-   <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code. You'll customise your piece with us after payment.</div>
+   <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code and the packed weight of your order. You'll customise your piece with us after payment.</div>
    <button class="primary" id="pay">${S.fb&&!S.user?"Sign in with Google to pay":`Pay ${inr(total())} securely`}</button>`;
   $("#pay").onclick=pay;
   const b=$("#cpnBtn"); if(b) b.onclick=applyCoupon;
@@ -1268,7 +1271,7 @@ function pay(){
   const rz=new Razorpay({
     key:CONFIG.razorpayKey, amount:total()*100, currency:CONFIG.currency, name:CONFIG.shopName,
     description:items.slice(0,250), prefill:{name:d.name,contact:"+91"+d.phone,email:S.user?S.user.email||"":""},
-    notes:{shipping:String((shipFor(d.pin,itemCount())||{}).amt||0),address:`${d.addr}, ${d.city} - ${d.pin}`.slice(0,250),items:items.slice(0,250),coupon:coupon&&couponOff()?coupon.code:""},
+    notes:{shipping:String((shipFor(d.pin,cartKg())||{}).amt||0),address:`${d.addr}, ${d.city} - ${d.pin}`.slice(0,250),items:items.slice(0,250),coupon:coupon&&couponOff()?coupon.code:""},
     theme:{color:"#2E1065"},
     handler:r=>success(r.razorpay_payment_id,d)
   });
@@ -1280,11 +1283,11 @@ function success(pid,d){
   const order={uid:S.user?S.user.uid:"",email:S.user?S.user.email||"":"",name:d.name,phone:d.phone,
     address:{house:d.house,building:d.bldg,street:d.street,area:d.area,city:d.cityOnly,state:d.state,pin:d.pin},
     items:cart.map(i=>{const p=PRODUCTS.find(x=>x.id===i.id); return {id:p.id,name:itemName(p,i.size),size:i.size||null,q:i.q,price:now(p,i.size)};}),
-    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,itemCount())||{}).amt||0,shippingZone:(shipFor(d.pin,itemCount())||{}).zone||"",total:total(),
+    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,cartKg())||{}).amt||0,shippingKg:(shipFor(d.pin,cartKg())||{}).kg||0,shippingZone:(shipFor(d.pin,cartKg())||{}).zone||"",total:total(),
     paymentId:pid,status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
   if(S.user) S.F.setDoc(S.F.doc(S.db,"orders",pid),order).catch(e=>console.warn("Order not saved",e));
   const lines=order.items.map(i=>`• ${i.name} x${i.q} (${inr(i.price*i.q)})`).join("\n");
-  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
+  const msg=`Hi ${CONFIG.shopName}! I've just placed an order.\n\n${lines}\n${order.discount?`Coupon ${order.coupon}: -${inr(order.discount)}\n`:""}Shipping (${order.shippingZone}, ${order.shippingKg} kg): ${inr(order.shipping)}\nTotal paid: ${inr(order.total)}\nPayment ID: ${pid}\n\nName: ${d.name}\nPhone: ${d.phone}\nAddress: ${d.addr}, ${d.city} - ${d.pin}\n\nMy customisation details:\n`;
   const url=`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
   cart=[]; coupon=null; save(); drawCart(); closeCart();
   $("#doneBox").innerHTML=`<div class="tick" aria-hidden="true">✓</div><h3>Payment successful</h3>
@@ -1544,6 +1547,7 @@ function closeLb(){ $("#lb").hidden=true; document.body.style.overflow=""; if(lb
 
 /* ---------- product page (the static /product/<slug>/ pages set window.CD_PRODUCT) ---------- */
 let ppSize=null, ppQty=1;
+const ppKg=()=>{ const p=PRODUCTS.find(x=>x.slug===window.CD_PRODUCT); return p?itemKg(p,ppSize||(p.tiers&&p.tiers[0].label)):DEFAULT_KG; };
 function buildProductPage(){
   const p=PRODUCTS.find(x=>x.slug===window.CD_PRODUCT); const el=$("#pp");
   if(!p){ el.innerHTML=`<div class="pp-wrap"><h1>We couldn't find that piece</h1><p style="margin:12px 0 20px">It may have moved. Have a look at everything we make.</p><a class="btn" href="/#shop">Browse all products</a></div>`; return; }
@@ -1556,7 +1560,7 @@ function buildProductPage(){
     <div class="ppi">
      <span class="ct">${esc(p.cat)}</span>
      <h1>${esc(p.name)}</h1>
-     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping, which is added at checkout from your PIN code.</p><div class="pinchk"><label for="pinq">Check shipping</label><input id="pinq" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="Your PIN code"><span id="pinr" role="status"></span></div>
+     <div class="pr" id="ppPrice"></div><p class="ship">Prices exclude shipping, which is added at checkout from your PIN code and the packed weight (2 to 5 kg per piece).</p><div class="pinchk"><label for="pinq">Check shipping</label><input id="pinq" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="Your PIN code"><span id="pinr" role="status"></span></div>
      <p class="tl">${esc(p.tagline||"")}</p>
      <p class="ds">${esc(p.desc)}</p>
      ${p.tiers?`<fieldset class="sizes"><legend>Choose a size</legend><div class="opts">${p.tiers.map(t=>`<label><input type="radio" name="size" value="${esc(t.label)}"><span>${esc(t.label)}<small>${inr(now(p,t.label))}</small></span></label>`).join("")}</div><div class="sz-err" id="szErr" role="alert"></div></fieldset>`:""}
@@ -1568,10 +1572,10 @@ function buildProductPage(){
    </div>
    ${more.length?`<div class="related"><h2>You may also like</h2><div class="grid">${more.map(card).join("")}</div></div>`:""}
   </div>`;
-  $("#pinq").oninput=e=>{ const v=e.target.value.replace(/\D/g,""); e.target.value=v; const r=shipFor(v,1);
+  $("#pinq").oninput=e=>{ const v=e.target.value.replace(/\D/g,""); e.target.value=v; const r=shipFor(v,ppKg());
     $("#pinr").textContent=r?`${r.zone}: ${inr(r.amt)} shipping`:(v.length===6?"":(v?"Enter all 6 digits":"")); };
   ppSize=null; ppQty=1; refreshPP();
-  el.querySelectorAll('input[name="size"]').forEach(r=>r.onchange=()=>{ ppSize=r.value; $("#szErr").textContent=""; refreshPP(); });
+  el.querySelectorAll('input[name="size"]').forEach(r=>r.onchange=()=>{ ppSize=r.value; $("#szErr").textContent=""; refreshPP(); $("#pinq").oninput({target:$("#pinq")}); });
   $("#qm").onclick=()=>{ ppQty=Math.max(1,ppQty-1); $("#qv").textContent=ppQty; }; $("#qp").onclick=()=>{ ppQty++; $("#qv").textContent=ppQty; };
   $("#ppAdd").onclick=()=>{ if(p.tiers&&!ppSize){ $("#szErr").textContent="Please choose a size."; el.querySelector(".sizes input").focus(); return; } addToCart(p.id,ppQty,ppSize,$("#ppAdd")); };
 }
@@ -1581,8 +1585,8 @@ function refreshPP(){
   pr.innerHTML=(p.tiers&&!ppSize?"From ":"")+priceHTML(p,ppSize); $("#ppAdd").disabled=!!p.hidden; if(p.hidden) $("#ppAdd").textContent="Not available right now";
 }
 
-{ const z=[...SHIPPING.zones,SHIPPING.rest], lo=Math.min(...z.map(x=>x.first)); const f=document.getElementById("faqShip");
-  if(f) f.textContent=`Shipping is added at checkout based on your delivery PIN code, from ${inr(lo)} within Hyderabad to ${inr(SHIPPING.rest.first)} for most of India. Each extra piece in the same order adds a smaller amount.`; }
+{ const f=document.getElementById("faqShip");
+  if(f) f.textContent="Shipping is added at checkout from your delivery PIN code and the packed weight of your order (each piece weighs 2 to 5 kg once packed). Type your PIN on any product page to see the charge."; }
 buildHero(); buildVaramalaWork(); buildCats(); buildFinder(); render(); buildBudget(); buildReviews(); drawCart();
 if(window.CD_PRODUCT) buildProductPage();
 else { const qc=new URLSearchParams(location.search).get("cat"); if(qc&&CATEGORIES.some(c=>c.name===qc)){ catPick(qc); goShop(); } }
