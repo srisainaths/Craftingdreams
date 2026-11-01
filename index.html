@@ -1220,6 +1220,18 @@ function shipFor(pin,kg){ if(!pinOk(pin)) return null; const n=+pin.slice(0,3);
 const curPin=()=>((document.getElementById("fz")||{}).value||"").trim();
 const cartKg=()=>cart.reduce((s,i)=>s+itemKg(PRODUCTS.find(p=>p.id===i.id),i.size)*i.q,0);
 const shipNow=()=>shipFor(curPin(),cartKg());
+/* place name for a PIN (India Post, then a backup service); shown instead of the zone name. If both fail we show the zone name. */
+const PINLOC={}, PINWAIT={};
+async function pinPlace(pin){
+  if(pin in PINLOC) return PINLOC[pin]; if(PINWAIT[pin]) return PINWAIT[pin];
+  const get=async(u,pick)=>{ const c=new AbortController(), t=setTimeout(()=>c.abort(),4500);
+    try{ const r=await fetch(u,{signal:c.signal}); return r.ok?(pick(await r.json())||""):""; }catch(e){ return ""; }finally{ clearTimeout(t); } };
+  return PINWAIT[pin]=(async()=>{
+    let v=await get("https://api.postalpincode.in/pincode/"+pin,j=>{ const o=j&&j[0]&&j[0].PostOffice&&j[0].PostOffice[0]; return o?[o.District,o.State].filter(Boolean).join(", "):""; });
+    if(!v) v=await get("https://api.zippopotam.us/in/"+pin,j=>{ const o=j&&j.places&&j.places[0]; return o?[o["place name"],o.state].filter(Boolean).join(", "):""; });
+    PINLOC[pin]=v; delete PINWAIT[pin]; return v; })();
+}
+const placeOf=(pin,sh)=>sh?(pin in PINLOC?(PINLOC[pin]||sh.zone):""):"";
 const total=()=>subtotal()-couponOff()+((shipNow()||{}).amt||0);
 const itemName=(p,size)=>p.name+(size?` (${size})`:"");
 function addToCart(id,q,size,src){ const p=PRODUCTS.find(x=>x.id===id); if(!p||p.hidden){ toast("This item isn't available right now"); return; }
@@ -1266,11 +1278,12 @@ function redrawFoot(){
      <div class="cpn-msg${coupon&&!short?" ok":""}" id="cpnMsg" role="status">${coupon?(short?`Add ${inr(coupon.minOrder-subtotal())} more to use ${esc(coupon.code)}.`:`${esc(coupon.code)} applied. You save ${inr(off)}.`):""}</div></div>`:""}
    <div class="sum"><span>Subtotal</span><span>${inr(subtotal())}</span></div>
    ${off?`<div class="sum save"><span>Coupon ${esc(coupon.code)}</span><span>−${inr(off)}</span></div>`:""}
-   <div class="sum"><span>Shipping${sh?` (${esc(sh.zone)})`:""}</span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
+   <div class="sum"><span>Shipping<span id="shipLbl">${sh&&placeOf(curPin(),sh)?` (${esc(placeOf(curPin(),sh))})`:""}</span></span><span>${sh?inr(sh.amt):"Enter PIN code"}</span></div>
    <div class="tot"><span>Total${sh?"":" (before shipping)"}</span><span>${inr(total())}</span></div>
    <div style="font-size:12.5px;color:var(--muted)">Shipping is worked out from your delivery PIN code. You'll customise your piece with us after payment.</div>
    <button class="primary" id="pay">${S.fb&&!S.user?"Sign in with Google to pay":`Pay ${inr(total())} securely`}</button>`;
   $("#pay").onclick=pay;
+  { const pin=curPin(); if(sh&&!(pin in PINLOC)) pinPlace(pin).then(()=>{ const el=$("#shipLbl"), now2=shipNow(); if(el&&now2&&curPin()===pin) el.textContent=` (${placeOf(pin,now2)})`; }); }
   const b=$("#cpnBtn"); if(b) b.onclick=applyCoupon;
   const ci=$("#cpn"); if(ci) ci.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); applyCoupon(); } };
 }
@@ -1332,7 +1345,7 @@ function success(pid,d){
   const order={uid:S.user?S.user.uid:"",email:S.user?S.user.email||"":"",name:d.name,phone:d.phone,
     address:{house:d.house,building:d.bldg,street:d.street,area:d.area,city:d.cityOnly,state:d.state,pin:d.pin},
     items:cart.map(i=>{const p=PRODUCTS.find(x=>x.id===i.id); return {id:p.id,name:itemName(p,i.size),size:i.size||null,q:i.q,price:now(p,i.size)};}),
-    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,cartKg())||{}).amt||0,shippingKg:(shipFor(d.pin,cartKg())||{}).kg||0,shippingZone:(shipFor(d.pin,cartKg())||{}).zone||"",total:total(),
+    subtotal:subtotal(),discount:couponOff(),coupon:coupon&&couponOff()?coupon.code:"",shipping:(shipFor(d.pin,cartKg())||{}).amt||0,shippingKg:(shipFor(d.pin,cartKg())||{}).kg||0,shippingZone:(()=>{ const x=shipFor(d.pin,cartKg()); return x?(placeOf(d.pin,x)||x.zone):""; })(),total:total(),
     paymentId:pid,status:"Paid",createdAt:at,history:[{status:"Paid",at}]};
   if(S.user) S.F.setDoc(S.F.doc(S.db,"orders",pid),order).catch(e=>console.warn("Order not saved",e));
   const lines=order.items.map(i=>`• ${i.name} x${i.q} (${inr(i.price*i.q)})`).join("\n");
@@ -1622,7 +1635,8 @@ function buildProductPage(){
    ${more.length?`<div class="related"><h2>You may also like</h2><div class="grid">${more.map(card).join("")}</div></div>`:""}
   </div>`;
   $("#pinq").oninput=e=>{ const v=e.target.value.replace(/\D/g,""); e.target.value=v; const r=shipFor(v,ppKg());
-    $("#pinr").textContent=r?`${r.zone}: ${inr(r.amt)} shipping`:(v.length===6?"":(v?"Enter all 6 digits":"")); };
+    const show=()=>{ if($("#pinq").value!==v) return; const w=r&&placeOf(v,r); $("#pinr").textContent=r?`${w?w+": ":""}${inr(r.amt)} shipping`:(v.length===6?"":(v?"Enter all 6 digits":"")); };
+    show(); if(r&&!(v in PINLOC)) pinPlace(v).then(show); };
   ppSize=null; ppQty=1; refreshPP();
   el.querySelectorAll('input[name="size"]').forEach(r=>r.onchange=()=>{ ppSize=r.value; $("#szErr").textContent=""; refreshPP(); $("#pinq").oninput({target:$("#pinq")}); });
   $("#qm").onclick=()=>{ ppQty=Math.max(1,ppQty-1); $("#qv").textContent=ppQty; }; $("#qp").onclick=()=>{ ppQty++; $("#qv").textContent=ppQty; };
