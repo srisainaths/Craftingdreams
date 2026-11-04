@@ -30,6 +30,9 @@ const PRODUCTS = new Function("IMG_VARAMALA", "return " + arr)(JSON.parse(imgVar
 const TIERS = new Function("return " + grab(/const TIERS = (\{[\s\S]*?\n\});/, "TIERS"))();
 for (const p of PRODUCTS) { p.tiers = TIERS[p.tier] || null; if (p.tiers) p.price = Math.min(...p.tiers.map((t) => t.price)); }
 
+/* products without a photo are hidden on the shop, so they get no page */
+for (let i = PRODUCTS.length - 1; i >= 0; i--) if (!PRODUCTS[i].image) PRODUCTS.splice(i, 1);
+
 const seen = new Set();
 for (const p of PRODUCTS) {
   if (!p.slug || !/^[a-z0-9-]+$/.test(p.slug)) throw new Error("Product " + p.id + " needs a slug (lowercase letters, numbers, hyphens)");

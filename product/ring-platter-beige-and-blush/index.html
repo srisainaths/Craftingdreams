@@ -818,6 +818,7 @@ const CATEGORIES = [
   {name:"Resin Frames", image:"images/resin/03-vinod-vaishnavi-sm.jpg"},
   {name:"Vintage Glass Frames", image:"images/glass/02-sona-smash-birthday-sm.jpg"},
   {name:"Varamala Preservation Teakwood Frames", image:IMG_VARAMALA},
+  {name:"String Art", image:""},
   {name:"Baby Casting", image:"images/baby/01-sahasvi-sm.jpg"},
   {name:"Engagement Platters", image:"images/platters/02-aishwarya-vamshi-krishna-sm.jpg"},
   {name:"Rakhi Plates", image:""},
@@ -841,7 +842,9 @@ const DEFAULT_KG = 2;
 const TIERS = {
   wood:[{label:"8 inch",price:2999,kg:2},{label:"10 inch",price:3999,kg:3},{label:"12 inch",price:4999,kg:4},{label:"14 inch",price:5999,kg:5}],
   inner:[{label:"12 × 9 inch",price:4499,kg:4},{label:"12 × 16 inch",price:5499,kg:5}],
-  free:[{label:"8 inch",price:1499,kg:2},{label:"10 inch",price:2499,kg:3},{label:"12 inch",price:3499,kg:4}]
+  free:[{label:"8 inch",price:1499,kg:2},{label:"10 inch",price:2499,kg:3},{label:"12 inch",price:3499,kg:4}],
+  /* String Art: 8 to 14 inch, from 1500. PLACEHOLDER prices for 10 to 14 inch, to be confirmed. */
+  string:[{label:"8 inch",price:1500,kg:2},{label:"10 inch",price:2000,kg:3},{label:"12 inch",price:2500,kg:4},{label:"14 inch",price:3000,kg:5}]
 };
 
 /* Shipping by PIN code (rupees). The first three digits of the PIN pick the zone.
@@ -952,6 +955,11 @@ const PRODUCTS = [
   {id:10, cat:"Resin Frames", name:"Name Initial", slug:"name-initial", tier:"free", price:1299, image:"",
    tagline:"Personalised name or initials", desc:"A personalised frame with the name or initials of your choice, finished with glitter.",
    note:"Share the name or initials and colours on WhatsApp after payment.", occ:["Birthday","Newborn"], rec:["Kids","Friends"]},
+  /* String Art: one product per shape. Copy this one for each shape, give it a name, slug and photo (image:"images/string/...jpg").
+     Like every product without a photo, it stays hidden until image is filled in. */
+  {id:801, cat:"String Art", name:"String Art", slug:"string-art", tier:"string", price:1500, image:"",
+   tagline:"Handmade thread art in the shape you love", desc:"Coloured thread wound by hand around nails on a wooden board to form a shape. Choose your size, from 8 to 14 inch. Every piece is made to order.",
+   note:"Made to order. After payment, tell us your colours and any name or date on WhatsApp.", occ:["Housewarming","Birthday","Anniversary"], rec:["For the home","Friends","Couples"]},
   /* Varamala frames (one per real piece; change price per frame if needed) */
   {id:101, cat:"Varamala Preservation Teakwood Frames", name:"Varamala Frame: Red and Honey Wood", slug:"varamala-frame-red-and-honey-wood", tier:"wood", price:4999, image:"images/varamala/02-sandeep-gaurangini.jpg", thumb:"images/varamala/02-sandeep-gaurangini-sm.jpg",
    tagline:"Wedding card & photo with rose petals and pearls", desc:"A one-of-a-kind keepsake we made from this couple's own varamala. Yours will be made the same way: we preserve the petals from your garland and set them in crystal-clear resin with your photo, pearls and gold flakes, plus your names and wedding date in gold lettering.",
@@ -1014,7 +1022,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">"
 const PAL = {
  "Resin Frames":["#B67BE0","#F3E1FD"], "Vintage Glass Frames":["#A58360","#F1E6D4"], "Varamala Preservation Teakwood Frames":["#C2557A","#FBDDE6"],
  "Baby Casting":["#7C8FD8","#E3E9FB"], "Engagement Platters":["#B98AD9","#F6E9FD"], "Rakhi Plates":["#D9774A","#FBE4D6"],
- "Diyas":["#D99A2B","#FCEFD2"], "Home Hangings":["#3E8FA5","#DDF1F5"], "Bed Lamps":["#8C63C9","#EEE3FB"]
+ "Diyas":["#D99A2B","#FCEFD2"], "Home Hangings":["#3E8FA5","#DDF1F5"], "Bed Lamps":["#8C63C9","#EEE3FB"],"String Art":["#C2477A","#FBE3EE"]
 };
 let uid = 0;
 /* Placeholder artwork shown until a real photo is added */
